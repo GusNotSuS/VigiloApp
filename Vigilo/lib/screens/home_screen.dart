@@ -6,67 +6,67 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vigilio'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 80),
+
+            // Ícone (pode trocar por imagem depois)
             const CircleAvatar(
-              radius: 48,
-              child: Icon(Icons.security, size: 42),
+              radius: 50,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.security, size: 50),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Olá, Bem-vindo!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 40),
+
+            // Área central (placeholder do card)
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              height: 180,
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: const Column(
+              child: const Center(
+                child: Text('Dashboard placeholder'),
+              ),
+            ),
+
+            const Spacer(),
+
+            // Botões
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Row(
                 children: [
-                  Icon(Icons.analytics_outlined, size: 52),
-                  SizedBox(height: 10),
-                  Text(
-                    'Dashboard MVP\nplaceholder',
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/messages');
+                      },
+                      child: const Text('Mensagens'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
+                      child: const Text('Configurações'),
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/messages');
-                    },
-                    child: const Text('Mensagens'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                    child: const Text('Configurações'),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
