@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../services/message_service.dart';
-import '../widgets/message_card.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -20,81 +19,101 @@ class _MessagesScreenState extends State<MessagesScreen> {
     _futureMessages = _service.fetchMessages();
   }
 
-  void _reload() {
-    setState(() {
-      _futureMessages = _service.fetchMessages();
-    });
-  }
-
-  Future<void> _sendMockMessage() async {
-    try {
-      await _service.createMessage(
-        'Oi! Acesse http://exemplo.com para mais informações.',
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mensagem enviada para análise')),
-      );
-
-      _reload();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar mensagem: $e')),
-      );
+  String _getStatus(MessageModel message) {
+    if (message.isSafe == true) return 'Segura';
+    if (message.isPhishing == true) return 'Phishing';
+    if (message.hasSocialEngineering == true) {
+      return 'Engenharia social';
     }
+    return 'Sem classificação';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mensagens'),
-        actions: [
-          IconButton(
-            onPressed: _reload,
-            icon: const Icon(Icons.refresh),
+      body: Column(
+        children: [
+          // 🔹 HEADER
+          Container(
+            width: double.infinity,
+            height: 90,
+            color: const Color(0xFF3B8EDB),
+            child: const Row(
+              children: [
+                SizedBox(width: 16),
+                Icon(Icons.menu, color: Colors.white),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'Caixa de Entrada',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 40),
+              ],
+            ),
+          ),
+
+          // 🔹 BODY
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: const Color(0xFFE5E5E5),
+              child: FutureBuilder<List<MessageModel>>(
+                future: _futureMessages,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Erro: ${snapshot.error}'),
+                    );
+                  }
+
+                  final messages = snapshot.data ?? [];
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (_, index) {
+                      final msg = messages[index];
+
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(msg.content),
+                            const SizedBox(height: 8),
+                            Text(
+                              _getStatus(msg),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _sendMockMessage,
-        child: const Icon(Icons.add),
-      ),
-      body: FutureBuilder<List<MessageModel>>(
-        future: _futureMessages,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text('Erro ao carregar mensagens:\n${snapshot.error}'),
-              ),
-            );
-          }
-
-          final messages = snapshot.data ?? [];
-
-          if (messages.isEmpty) {
-            return const Center(
-              child: Text('Nenhuma mensagem encontrada'),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: messages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, index) {
-              return MessageCard(message: messages[index]);
-            },
-          );
-        },
       ),
     );
   }

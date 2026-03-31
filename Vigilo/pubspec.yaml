@@ -25,3 +25,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon.png
+    - assets/Button.png
+    - assets/Banner.png
+    - assets/Detail.png
+    - assets/Fala_Home.png
+    - assets/Fala_Config.png

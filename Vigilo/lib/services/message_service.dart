@@ -1,45 +1,52 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:async';
 import '../models/message_model.dart';
 
 class MessageService {
-  // Troque pela URL real da sua API
-  static const String baseUrl = 'http://10.0.2.2:8000/api/v1/messages';
+  // 🔹 FUTURO: trocar por API real
+  static const String baseUrl = 'http://SEU_BACKEND_AQUI';
 
   Future<List<MessageModel>> fetchMessages() async {
-    final response = await http.get(Uri.parse(baseUrl));
+    await Future.delayed(const Duration(seconds: 1));
 
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao buscar mensagens');
-    }
-
-    final body = jsonDecode(response.body);
-
-    if (body is List) {
-      return body.map((item) => MessageModel.fromJson(item)).toList();
-    }
-
-    if (body is Map && body['items'] is List) {
-      return (body['items'] as List)
-          .map((item) => MessageModel.fromJson(item))
-          .toList();
-    }
-
-    return [];
+    return [
+      MessageModel(
+        id: '1',
+        content: 'Acesse http://banco-fake.com para atualizar seus dados',
+        isPhishing: true,
+        hasSocialEngineering: true,
+        isSafe: false,
+        resultLink: 'http://banco-fake.com',
+        createdAt: '2026-03-31 20:10',
+      ),
+      MessageModel(
+        id: '2',
+        content: 'Sua encomenda chegou! Veja detalhes no app oficial.',
+        isSafe: true,
+        isPhishing: false,
+        hasSocialEngineering: false,
+        createdAt: '2026-03-31 19:00',
+      ),
+      MessageModel(
+        id: '3',
+        content: 'Promoção imperdível!!! Clique agora!',
+        hasSocialEngineering: true,
+        isSafe: false,
+        isPhishing: false,
+        createdAt: '2026-03-30 22:15',
+      ),
+    ];
   }
 
   Future<MessageModel> createMessage(String content) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'content': content}),
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    return MessageModel(
+      id: DateTime.now().toString(),
+      content: content,
+      isSafe: false,
+      isPhishing: true,
+      hasSocialEngineering: true,
+      createdAt: DateTime.now().toString(),
     );
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Erro ao enviar mensagem');
-    }
-
-    final body = jsonDecode(response.body);
-    return MessageModel.fromJson(body);
   }
 }
