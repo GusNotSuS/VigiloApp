@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/message_service.dart';
 import '../models/message_model.dart';
+import '../services/message_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -8,128 +8,182 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          // 🔹 HEADER
-          Container(
-            width: double.infinity,
-            height: 90,
-            color: const Color(0xFF3B8EDB),
-            child: const Row(
-              children: [
-                SizedBox(width: 16),
-                Icon(Icons.menu, color: Colors.white),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      'Resumo',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 40),
-              ],
+          Positioned.fill(
+            child: Image.asset(
+              'assets/Background.png',
+              fit: BoxFit.cover,
             ),
           ),
-
-          // 🔹 BODY
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              color: const Color(0xFFE5E5E5),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-
-                  const Text('Última mensagem capturada'),
-
-                  const SizedBox(height: 12),
-
-                  // 🔹 CARD COM DADOS
-                  FutureBuilder<List<MessageModel>>(
-                    future: MessageService().fetchMessages(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          height: 220,
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-
-                      final msg = snapshot.data!.first;
-
-                      return Container(
-                        width: double.infinity,
-                        height: 220,
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(12),
+          SafeArea(
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 70,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/Banner_Home.png',
+                          fit: BoxFit.fill,
                         ),
-                        child: Text(msg.content),
-                      );
-                    },
+                      ),
+                      const Center(
+                        child: Text(
+                          'Resumo',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: 30),
-
-                  // 🔹 BOTÕES
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/messages');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B8EDB),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text('Mensagens'),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'Última mensagem capturada',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/settings');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B8EDB),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text('Configurações'),
-                          ),
+                        const SizedBox(height: 10),
+                        FutureBuilder<List<MessageModel>>(
+                          future: MessageService().fetchMessages(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Container(
+                                height: 180,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD9D9D9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            final messages = snapshot.data ?? [];
+
+                            if (messages.isEmpty) {
+                              return Container(
+                                height: 180,
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD9D9D9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Text('Nenhuma mensagem capturada'),
+                                ),
+                              );
+                            }
+
+                            final msg = messages.first;
+
+                            return Container(
+                              height: 180,
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD9D9D9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              child: Text(
+                                msg.content,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          },
                         ),
+                        const SizedBox(height: 28),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ActionButton(
+                                label: 'Mensagens',
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/messages');
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _ActionButton(
+                                label: 'Configurações',
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/settings');
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Image.asset(
+                          'assets/Fala_Home.png',
+                          width: 160,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
-
-                  const Spacer(),
-
-                  // 🔹 ICON
-                  Image.asset(
-                    'assets/Fala_Home.png',
-                    height: 150,
-                  ),
-
-                  const SizedBox(height: 20),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2E97F2),
+          foregroundColor: Colors.black,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }

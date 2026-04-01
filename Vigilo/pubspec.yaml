@@ -24,9 +24,12 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/icon.png
+    - assets/Icon.png
     - assets/Button.png
-    - assets/Banner.png
+    - assets/banner.png
     - assets/Detail.png
     - assets/Fala_Home.png
     - assets/Fala_Config.png
+    - assets/Background.png
+    - assets/Return_Button.png
+    - assets/Banner_Home.png

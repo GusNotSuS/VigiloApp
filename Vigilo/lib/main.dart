@@ -18,6 +18,7 @@ class VigilioApp extends StatelessWidget {
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
+        fontFamily: 'Arial',
       ),
       initialRoute: '/',
       routes: {
