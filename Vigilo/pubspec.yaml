@@ -24,7 +24,7 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/Icon.png
+    - assets/icon.png
     - assets/Button.png
     - assets/banner.png
     - assets/Detail.png
