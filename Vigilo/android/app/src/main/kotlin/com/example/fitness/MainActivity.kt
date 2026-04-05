@@ -6,21 +6,36 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity: FlutterActivity() {
+class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.fitness/notifications"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "checkPermission" -> {
                     result.success(isNotificationServiceEnabled())
                 }
+
                 "openSettings" -> {
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                    result.success(true)
+                    try {
+                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error(
+                            "OPEN_SETTINGS_ERROR",
+                            "Não foi possível abrir as configurações.",
+                            e.message
+                        )
+                    }
                 }
+
                 else -> {
                     result.notImplemented()
                 }
@@ -29,7 +44,11 @@ class MainActivity: FlutterActivity() {
     }
 
     private fun isNotificationServiceEnabled(): Boolean {
-        val names = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        return names != null && names.contains(packageName)
+        val enabledListeners = Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners"
+        ) ?: return false
+
+        return enabledListeners.contains(packageName)
     }
 }

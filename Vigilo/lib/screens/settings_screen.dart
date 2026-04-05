@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/notification_permission_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -7,9 +8,94 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   bool notificationsEnabled = true;
   double phishingPercentage = 80;
+
+  final NotificationPermissionService _permissionService =
+      NotificationPermissionService();
+
+  bool _isCheckingPermission = true;
+  bool _permissionGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadPermissionStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadPermissionStatus();
+    }
+  }
+
+  Future<void> _loadPermissionStatus() async {
+    setState(() {
+      _isCheckingPermission = true;
+    });
+
+    final granted = await _permissionService.checkPermission();
+
+    if (!mounted) return;
+
+    setState(() {
+      _permissionGranted = granted;
+      _isCheckingPermission = false;
+    });
+  }
+
+  Future<void> _handleOpenPermissions() async {
+    final opened = await _permissionService.openSettings();
+
+    if (!mounted) return;
+
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível abrir as configurações do Android.'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Ative o acesso a notificações do Vigilio e volte para o app.',
+        ),
+      ),
+    );
+  }
+
+  String _permissionStatusText() {
+    if (_isCheckingPermission) {
+      return 'Verificando permissão...';
+    }
+
+    if (_permissionGranted) {
+      return 'Permissão de acesso às notificações: ativada.';
+    }
+
+    return 'Permissão de acesso às notificações: desativada.';
+  }
+
+  Color _permissionStatusColor() {
+    if (_isCheckingPermission) {
+      return Colors.black87;
+    }
+
+    return _permissionGranted ? Colors.green.shade700 : Colors.red.shade700;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'assets/Return_Button.png',
                             width: 24,
                             height: 24,
+                            errorBuilder: (_, __, ___) {
+                              return const Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.white,
+                                size: 20,
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -140,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 width: double.infinity,
                                 height: 40,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: _handleOpenPermissions,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2E97F2),
                                     foregroundColor: Colors.black,
@@ -153,7 +246,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                'Essa permissão é o que nos permite ver quem são as pessoas que estão te mandando mensagem, para que possamos pegar possíveis fraudadores.',
+                                _permissionStatusText(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _permissionStatusColor(),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Essa permissão é o que nos permite ler notificações recebidas no aparelho para identificar possíveis mensagens suspeitas.',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade800,
