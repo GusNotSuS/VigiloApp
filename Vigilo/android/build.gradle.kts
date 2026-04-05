@@ -1,3 +1,20 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Verifique se a versão do kotlin aqui condiz com a do seu projeto
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0") 
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
 allprojects {
     repositories {
         google()
@@ -22,3 +39,4 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+

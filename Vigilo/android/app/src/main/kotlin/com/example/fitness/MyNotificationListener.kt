@@ -43,7 +43,7 @@ class MyNotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         // 1. LOG DE ENTRADA: Roda para QUALQUER notificação que aparecer no celular
-        Log.d("VIGILO_DEBUG", "------------------------------------------")
+        Log.e("VIGILO_DEBUG", "------------------------------------------")
         Log.d("VIGILO_DEBUG", "App que enviou: ${sbn?.packageName}")
 
         val extras = sbn?.notification?.extras
