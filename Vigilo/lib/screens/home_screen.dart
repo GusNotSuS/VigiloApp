@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Última mensagem capturada',
+                    'Resumo de monitoramento',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.black87,
@@ -72,38 +72,70 @@ class HomeScreen extends StatelessWidget {
                     future: service.fetchMessages(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return _messageBox(
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                        return _statusBox(
+                          title: 'Carregando monitoramento',
+                          description:
+                              'Aguarde enquanto verificamos as mensagens capturadas.',
+                          titleColor: Colors.black87,
+                          icon: Icons.hourglass_top_rounded,
                         );
                       }
 
                       if (snapshot.hasError) {
-                        return _messageBox(
-                          child: Center(
-                            child: Text('Erro: ${snapshot.error}'),
-                          ),
+                        return _statusBox(
+                          title: 'Falha ao consultar mensagens',
+                          description:
+                              'Não foi possível carregar o resumo no momento.',
+                          titleColor: Colors.red.shade700,
+                          icon: Icons.error_outline_rounded,
                         );
                       }
 
                       final messages = snapshot.data ?? [];
 
                       if (messages.isEmpty) {
-                        return _messageBox(
-                          child: const Center(
-                            child: Text('Nenhuma mensagem capturada'),
-                          ),
+                        return _statusBox(
+                          title: 'Nenhuma mensagem capturada',
+                          description:
+                              'O Vigilio ainda não identificou mensagens para análise.',
+                          titleColor: Colors.black87,
+                          icon: Icons.inbox_outlined,
                         );
                       }
 
-                      final msg = messages.first;
+                      final suspiciousMessages = messages.where((msg) {
+                        return msg.isSafe == false ||
+                            msg.isPhishing == true ||
+                            msg.hasSocialEngineering == true;
+                      }).toList();
 
-                      return _messageBox(
-                        child: Text(
-                          msg.content,
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                      if (suspiciousMessages.isEmpty) {
+                        return _statusBox(
+                          title: 'Mensagens monitoradas sem risco',
+                          description:
+                              'Foram identificadas mensagens, mas nenhuma apresentou sinais de phishing ou engenharia social.',
+                          titleColor: Colors.green.shade700,
+                          icon: Icons.verified_user_outlined,
+                        );
+                      }
+
+                      if (suspiciousMessages.length == 1) {
+                        return _statusBox(
+                          title: '1 mensagem suspeita encontrada',
+                          description:
+                              'Foi identificado um conteúdo com indícios de risco. Consulte a caixa de entrada para análise detalhada.',
+                          titleColor: Colors.red.shade700,
+                          icon: Icons.warning_amber_rounded,
+                        );
+                      }
+
+                      return _statusBox(
+                        title:
+                            '${suspiciousMessages.length} mensagens suspeitas encontradas',
+                        description:
+                            'Foram detectadas mensagens com possíveis indícios de phishing ou engenharia social. Revise a caixa de entrada para mais detalhes.',
+                        titleColor: Colors.red.shade700,
+                        icon: Icons.warning_amber_rounded,
                       );
                     },
                   ),
@@ -148,7 +180,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _messageBox({required Widget child}) {
+  Widget _statusBox({
+    required String title,
+    required String description,
+    required Color titleColor,
+    required IconData icon,
+  }) {
     return Container(
       height: 185,
       width: double.infinity,
@@ -158,7 +195,41 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.black12),
       ),
-      child: child,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: titleColor,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
