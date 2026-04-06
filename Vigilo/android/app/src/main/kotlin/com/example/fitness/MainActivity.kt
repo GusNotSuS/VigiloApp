@@ -4,17 +4,19 @@ import android.content.Intent
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.fitness/notifications"
+    private val PERMISSION_CHANNEL = "com.example.fitness/notifications"
+    private val MESSAGE_STREAM_CHANNEL = "com.example.fitness/messages_stream"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            CHANNEL
+            PERMISSION_CHANNEL
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "checkPermission" -> {
@@ -36,11 +38,14 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-                else -> {
-                    result.notImplemented()
-                }
+                else -> result.notImplemented()
             }
         }
+
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            MESSAGE_STREAM_CHANNEL
+        ).setStreamHandler(NotificationEventBridge)
     }
 
     private fun isNotificationServiceEnabled(): Boolean {

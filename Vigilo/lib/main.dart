@@ -4,6 +4,7 @@ import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const VigilioApp());
 }
 

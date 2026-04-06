@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
-import '../services/message_service.dart';
+import '../services/Message_Service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final service = MessageService();
+
     return Scaffold(
       body: Stack(
         children: [
@@ -67,18 +69,10 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   FutureBuilder<List<MessageModel>>(
-                    future: MessageService().fetchMessages(),
+                    future: service.fetchMessages(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return Container(
-                          height: 185,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.black12),
-                          ),
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return _messageBox(
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -86,15 +80,7 @@ class HomeScreen extends StatelessWidget {
                       }
 
                       if (snapshot.hasError) {
-                        return Container(
-                          height: 185,
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.black12),
-                          ),
+                        return _messageBox(
                           child: Center(
                             child: Text('Erro: ${snapshot.error}'),
                           ),
@@ -104,15 +90,7 @@ class HomeScreen extends StatelessWidget {
                       final messages = snapshot.data ?? [];
 
                       if (messages.isEmpty) {
-                        return Container(
-                          height: 185,
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.black12),
-                          ),
+                        return _messageBox(
                           child: const Center(
                             child: Text('Nenhuma mensagem capturada'),
                           ),
@@ -121,15 +99,7 @@ class HomeScreen extends StatelessWidget {
 
                       final msg = messages.first;
 
-                      return Container(
-                        height: 185,
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD9D9D9),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.black12),
-                        ),
+                      return _messageBox(
                         child: Text(
                           msg.content,
                           style: const TextStyle(fontSize: 14),
@@ -175,6 +145,20 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _messageBox({required Widget child}) {
+    return Container(
+      height: 185,
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: child,
     );
   }
 }
