@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
-import '../services/message_service.dart';
+import '../services/Message_Service.dart';
+import 'message_details_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -26,6 +27,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
       return 'Engenharia social';
     }
     return 'Sem classificação';
+  }
+
+  Color _getStatusColor(MessageModel message) {
+    if (message.isSafe == true) return Colors.green.shade700;
+    if (message.isPhishing == true) return Colors.red.shade700;
+    if (message.hasSocialEngineering == true) return Colors.orange.shade700;
+    return Colors.grey.shade700;
   }
 
   @override
@@ -144,39 +152,76 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                     itemBuilder: (_, index) {
                                       final msg = messages[index];
 
-                                      return Container(
-                                        height: 105,
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFD9D9D9),
+                                      return Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
                                           borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: Colors.black12,
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    MessageDetailsScreen(
+                                                  message: msg,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFD9D9D9),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.black12,
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  msg.content,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 5,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: _getStatusColor(msg)
+                                                        .withValues(alpha: 0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(20),
+                                                    border: Border.all(
+                                                      color: _getStatusColor(msg),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    _getStatus(msg),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color:
+                                                          _getStatusColor(msg),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            const Text(
-                                              'Dados da mensagem',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              _getStatus(msg),
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
                                         ),
                                       );
                                     },
