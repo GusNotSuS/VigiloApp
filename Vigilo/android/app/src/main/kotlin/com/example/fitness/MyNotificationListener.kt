@@ -18,11 +18,14 @@ import java.io.IOException
 class MyNotificationListener : NotificationListenerService() {
 
     private val channelId = "VigiloServiceChannel"
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
     private val client = OkHttpClient()
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
 
     // Emulador Android: 10.0.2.2
     // Celular físico: trocar pelo IP da sua máquina na rede local
     private val backendUrl = "http://10.10.2.130:8080/api/v1/messages/"
+    private val processedNotifications = HashSet<String>()
 
     override fun onCreate() {
         super.onCreate()
@@ -50,45 +53,86 @@ class MyNotificationListener : NotificationListenerService() {
         }
     }
 
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn == null) return
-
-        val packageName = sbn.packageName ?: return
-
-        Log.d("VIGILO_DEBUG", "------------------------------------------")
-        Log.d("VIGILO_DEBUG", "App que enviou: $packageName")
-
-        val allowedPackages = setOf(
-            "com.whatsapp",
-            "com.google.android.gm"
-        )
-
-        if (!allowedPackages.contains(packageName)) {
-            Log.d("VIGILO_DEBUG", "Ignorado: app fora da lista permitida")
-            return
-        }
-
-        val extras = sbn.notification.extras
+        val packageName = sbn?.packageName ?: return
+        val extras = sbn.notification?.extras
         val title = extras?.getString("android.title") ?: ""
         val text = extras?.getCharSequence("android.text")?.toString() ?: ""
 
-        Log.d("VIGILO_DEBUG", "Título: $title")
-        Log.d("VIGILO_DEBUG", "Texto: $text")
+        val allowedPackages = setOf(
+            "com.whatsapp",
+            "com.google.android.apps.messaging",
+            "com.android.mms",
+            "com.sec.android.app.messaging"
+        )
 
+        if (!allowedPackages.contains(packageName)) return
         if (text.isBlank()) return
 
-        val fullContent = if (title.isNotBlank()) "$title: $text" else text
 
-        if (packageName == "com.whatsapp") {
-            if (title.contains("+") || title.matches(".*\\d{5,}.*".toRegex())) {
-                Log.w("VIGILO_DEBUG", "Status: provável número não salvo")
-            } else {
-                Log.d("VIGILO_DEBUG", "Status: contato comum")
-            }
+        val isUnknown = title.startsWith("+") || title.any { it.isDigit() }
+        if (!isUnknown) {
+            Log.d("VIGILO_DEBUG", "Ignorado: Contato salvo ($title)")
+            return
         }
 
+        // FILTRO DE DUPLICIDADE (Evita enviar a mesma notificação repetida)
+        val msgKey = "$title|$text"
+        if (processedNotifications.contains(msgKey)) {
+            Log.d("VIGILO_DEBUG", "Ignorado: Mensagem duplicada")
+            return
+        }
+        processedNotifications.add(msgKey)
+        if (processedNotifications.size > 100) processedNotifications.clear()
+
+
+        val fullContent = if (title.isNotBlank()) "$title: $text" else text
+        
+        Log.i("VIGILO_DEBUG", ">>> ENVIANDO PARA BACKEND: $fullContent")
         sendToBackend(fullContent)
     }
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
+    
+    // override fun onNotificationPosted(sbn: StatusBarNotification?) {
+    //     if (sbn == null) return
+
+    //     val packageName = sbn.packageName ?: return
+
+    //     Log.d("VIGILO_DEBUG", "------------------------------------------")
+    //     Log.d("VIGILO_DEBUG", "App que enviou: $packageName")
+
+    //     val allowedPackages = setOf(
+    //         "com.whatsapp",
+    //         "com.google.android.gm"
+    //     )
+
+    //     if (!allowedPackages.contains(packageName)) {
+    //         Log.d("VIGILO_DEBUG", "Ignorado: app fora da lista permitida")
+    //         return
+    //     }
+
+    //     val extras = sbn.notification.extras
+    //     val title = extras?.getString("android.title") ?: ""
+    //     val text = extras?.getCharSequence("android.text")?.toString() ?: ""
+
+    //     Log.d("VIGILO_DEBUG", "Título: $title")
+    //     Log.d("VIGILO_DEBUG", "Texto: $text")
+
+    //     if (text.isBlank()) return
+
+    //     val fullContent = if (title.isNotBlank()) "$title: $text" else text
+
+    //     if (packageName == "com.whatsapp") {
+    //         if (title.contains("+") || title.matches(".*\\d{5,}.*".toRegex())) {
+    //             Log.w("VIGILO_DEBUG", "Status: provável número não salvo")
+    //         } else {
+    //             Log.d("VIGILO_DEBUG", "Status: contato comum")
+    //         }
+    //     }
+
+    //     sendToBackend(fullContent)
+    // }
 
     private fun sendToBackend(content: String) {
         val payload = JSONObject().apply {
