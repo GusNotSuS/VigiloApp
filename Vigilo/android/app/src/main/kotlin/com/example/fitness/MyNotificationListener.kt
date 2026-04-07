@@ -21,10 +21,11 @@ class MyNotificationListener : NotificationListenerService() {
     //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
     private val client = OkHttpClient()
     //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
+    private val processedNotifications = mutableSetOf<String>()
 
     // Emulador Android: 10.0.2.2
     // Celular físico: trocar pelo IP da sua máquina na rede local
-    private val backendUrl = "http://10.91.23.196:8080/api/v1/messages/"
+    private val backendUrl = "http://10.91.23.232:8080/api/v1/messages/"
 
     override fun onCreate() {
         super.onCreate()

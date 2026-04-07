@@ -9,7 +9,7 @@ class MessageService {
   // static const String baseUrl = 'http://10.0.2.2:8080/api/v1/messages';
 
   // CELULAR FÍSICO (troca pelo IP do seu PC):
-  static const String baseUrl = 'http://10.91.23.196:8080/api/v1/messages/';
+  static const String baseUrl = 'http://10.91.23.232:8080/api/v1/messages/';
 
   Future<List<MessageModel>> fetchMessages() async {
     final response = await http.get(Uri.parse(baseUrl));
