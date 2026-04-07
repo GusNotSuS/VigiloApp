@@ -46,7 +46,7 @@ class MyNotificationListener : NotificationListenerService() {
             val serviceChannel = NotificationChannel(
                 channelId,
                 "Vigilio Monitoramento",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
@@ -160,6 +160,16 @@ class MyNotificationListener : NotificationListenerService() {
 
                     val json = JSONObject(body)
 
+                    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
+                    // VERIFICAÇÃO DE PHISHING
+                    // Verificamos se o campo existe e se é verdadeiro
+                    val isPhishing = json.optBoolean("is_phishing", false)
+                    if (isPhishing) {
+                        Log.w("VIGILO_DEBUG", "ALERTA: Phishing confirmado pelo backend!")
+                        showPhishingAlert(content) // Dispara a notificação push
+                    }
+                    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
+
                     val result = hashMapOf<String, Any?>(
                         "id" to json.optString("id"),
                         "content" to json.optString("content"),
@@ -197,5 +207,21 @@ class MyNotificationListener : NotificationListenerService() {
         )
 
         NotificationEventBridge.sendMessage(fallback)
+    }
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
+    private fun showPhishingAlert(messageContent: String) {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val notificationId = 2 // ID diferente da notificação fixa (1)
+
+        val alertNotification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ Alerta de Phishing!")
+            .setContentText("Uma mensagem suspeita foi detectada.")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Conteúdo suspeito: $messageContent"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Faz a notificação "pular" na tela
+            .setAutoCancel(true) // Remove a notificação quando o usuário clica
+            .build()
+
+        notificationManager.notify(notificationId, alertNotification)
     }
 }
