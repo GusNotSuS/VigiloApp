@@ -18,7 +18,9 @@ import java.io.IOException
 class MyNotificationListener : NotificationListenerService() {
 
     private val channelId = "VigiloServiceChannel"
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
     private val client = OkHttpClient()
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
 
     // Emulador Android: 10.0.2.2
     // Celular físico: trocar pelo IP da sua máquina na rede local
@@ -43,52 +45,93 @@ class MyNotificationListener : NotificationListenerService() {
             val serviceChannel = NotificationChannel(
                 channelId,
                 "Vigilio Monitoramento",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
     }
 
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn == null) return
-
-        val packageName = sbn.packageName ?: return
-
-        Log.d("VIGILO_DEBUG", "------------------------------------------")
-        Log.d("VIGILO_DEBUG", "App que enviou: $packageName")
-
-        val allowedPackages = setOf(
-            "com.whatsapp",
-            "com.google.android.gm"
-        )
-
-        if (!allowedPackages.contains(packageName)) {
-            Log.d("VIGILO_DEBUG", "Ignorado: app fora da lista permitida")
-            return
-        }
-
-        val extras = sbn.notification.extras
+        val packageName = sbn?.packageName ?: return
+        val extras = sbn.notification?.extras
         val title = extras?.getString("android.title") ?: ""
         val text = extras?.getCharSequence("android.text")?.toString() ?: ""
 
-        Log.d("VIGILO_DEBUG", "Título: $title")
-        Log.d("VIGILO_DEBUG", "Texto: $text")
+        val allowedPackages = setOf(
+            "com.whatsapp",
+            "com.google.android.apps.messaging",
+            "com.android.mms",
+            "com.sec.android.app.messaging"
+        )
 
+        if (!allowedPackages.contains(packageName)) return
         if (text.isBlank()) return
 
-        val fullContent = if (title.isNotBlank()) "$title: $text" else text
 
-        if (packageName == "com.whatsapp") {
-            if (title.contains("+") || title.matches(".*\\d{5,}.*".toRegex())) {
-                Log.w("VIGILO_DEBUG", "Status: provável número não salvo")
-            } else {
-                Log.d("VIGILO_DEBUG", "Status: contato comum")
-            }
+        val isUnknown = title.startsWith("+") || title.any { it.isDigit() }
+        if (!isUnknown) {
+            Log.d("VIGILO_DEBUG", "Ignorado: Contato salvo ($title)")
+            return
         }
 
+        // FILTRO DE DUPLICIDADE (Evita enviar a mesma notificação repetida)
+        val msgKey = "$title|$text"
+        if (processedNotifications.contains(msgKey)) {
+            Log.d("VIGILO_DEBUG", "Ignorado: Mensagem duplicada")
+            return
+        }
+        processedNotifications.add(msgKey)
+        if (processedNotifications.size > 100) processedNotifications.clear()
+
+
+        val fullContent = if (title.isNotBlank()) "$title: $text" else text
+        
+        Log.i("VIGILO_DEBUG", ">>> ENVIANDO PARA BACKEND: $fullContent")
         sendToBackend(fullContent)
     }
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas
+    
+    // override fun onNotificationPosted(sbn: StatusBarNotification?) {
+    //     if (sbn == null) return
+
+    //     val packageName = sbn.packageName ?: return
+
+    //     Log.d("VIGILO_DEBUG", "------------------------------------------")
+    //     Log.d("VIGILO_DEBUG", "App que enviou: $packageName")
+
+    //     val allowedPackages = setOf(
+    //         "com.whatsapp",
+    //         "com.google.android.gm"
+    //     )
+
+    //     if (!allowedPackages.contains(packageName)) {
+    //         Log.d("VIGILO_DEBUG", "Ignorado: app fora da lista permitida")
+    //         return
+    //     }
+
+    //     val extras = sbn.notification.extras
+    //     val title = extras?.getString("android.title") ?: ""
+    //     val text = extras?.getCharSequence("android.text")?.toString() ?: ""
+
+    //     Log.d("VIGILO_DEBUG", "Título: $title")
+    //     Log.d("VIGILO_DEBUG", "Texto: $text")
+
+    //     if (text.isBlank()) return
+
+    //     val fullContent = if (title.isNotBlank()) "$title: $text" else text
+
+    //     if (packageName == "com.whatsapp") {
+    //         if (title.contains("+") || title.matches(".*\\d{5,}.*".toRegex())) {
+    //             Log.w("VIGILO_DEBUG", "Status: provável número não salvo")
+    //         } else {
+    //             Log.d("VIGILO_DEBUG", "Status: contato comum")
+    //         }
+    //     }
+
+    //     sendToBackend(fullContent)
+    // }
 
     private fun sendToBackend(content: String) {
         val payload = JSONObject().apply {
@@ -115,6 +158,16 @@ class MyNotificationListener : NotificationListenerService() {
                     }
 
                     val json = JSONObject(body)
+
+                    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
+                    // VERIFICAÇÃO DE PHISHING
+                    // Verificamos se o campo existe e se é verdadeiro
+                    val isPhishing = json.optBoolean("is_phishing", false)
+                    if (isPhishing) {
+                        Log.w("VIGILO_DEBUG", "ALERTA: Phishing confirmado pelo backend!")
+                        showPhishingAlert(content) // Dispara a notificação push
+                    }
+                    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
 
                     val result = hashMapOf<String, Any?>(
                         "id" to json.optString("id"),
@@ -153,5 +206,21 @@ class MyNotificationListener : NotificationListenerService() {
         )
 
         NotificationEventBridge.sendMessage(fallback)
+    }
+    //>>>>>>>>>>>>>>>>>>>>>>>Adicionado novo Lucas2
+    private fun showPhishingAlert(messageContent: String) {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val notificationId = 2 // ID diferente da notificação fixa (1)
+
+        val alertNotification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ Alerta de Phishing!")
+            .setContentText("Uma mensagem suspeita foi detectada.")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Conteúdo suspeito: $messageContent"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Faz a notificação "pular" na tela
+            .setAutoCancel(true) // Remove a notificação quando o usuário clica
+            .build()
+
+        notificationManager.notify(notificationId, alertNotification)
     }
 }
