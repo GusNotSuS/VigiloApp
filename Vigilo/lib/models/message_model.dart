@@ -5,6 +5,7 @@ class MessageModel {
   final bool? hasSocialEngineering;
   final bool? isPhishing;
   final bool? isSafe;
+  final String? classificationReason; // Novo campo de justificativa
   final String? createdAt;
   final String? updatedAt;
 
@@ -15,6 +16,7 @@ class MessageModel {
     this.hasSocialEngineering,
     this.isPhishing,
     this.isSafe,
+    this.classificationReason,
     this.createdAt,
     this.updatedAt,
   });
@@ -27,6 +29,8 @@ class MessageModel {
       hasSocialEngineering: json['has_social_engineering'],
       isPhishing: json['is_phishing'],
       isSafe: json['is_safe'],
+      // Mapeia o motivo vindo da nova API
+      classificationReason: json['reason'] ?? json['classification_reason'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );

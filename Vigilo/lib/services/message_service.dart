@@ -3,25 +3,24 @@ import 'package:http/http.dart' as http;
 import '../models/message_model.dart';
 
 class MessageService {
-  // ⚠️ IMPORTANTE: trocar dependendo do teste
-
-  // EMULADOR:
-  // static const String baseUrl = 'http://10.0.2.2:8080/api/v1/messages';
-
-  // CELULAR FÍSICO (troca pelo IP do seu PC):
+  // Endereço da API REST real [cite: 22, 49]
   static const String baseUrl = 'http://10.91.23.232:8080/api/v1/messages/';
 
-  Future<List<MessageModel>> fetchMessages() async {
-    final response = await http.get(Uri.parse(baseUrl));
+  // Implementação de paginação para evitar gargalos [cite: 24, 63]
+  Future<List<MessageModel>> fetchMessages({int page = 1, int limit = 20}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl?page=$page&limit=$limit'),
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
+      // A API agora retorna uma lista paginada dentro de 'items'
       return (data['items'] as List)
           .map((e) => MessageModel.fromJson(e))
           .toList();
     } else {
-      throw Exception('Erro ao buscar mensagens');
+      throw Exception('Erro ao buscar histórico de mensagens [cite: 53]');
     }
   }
 
@@ -36,7 +35,7 @@ class MessageService {
       final data = jsonDecode(response.body);
       return MessageModel.fromJson(data);
     } else {
-      throw Exception('Erro ao criar mensagem');
+      throw Exception('Erro ao enviar mensagem para análise [cite: 51]');
     }
   }
 }

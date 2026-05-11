@@ -12,20 +12,66 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   final MessageService _service = MessageService();
-  late Future<List<MessageModel>> _futureMessages;
+  final ScrollController _scrollController = ScrollController();
+
+  // Estado para controle de paginação e performance (Cenário B)
+  List<MessageModel> _messages = [];
+  int _page = 1;
+  bool _isLoading = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
-    _futureMessages = _service.fetchMessages();
+    _fetchPage();
+    
+    // Listener para implementar Lazy Loading (MVP 2 - Otimização)
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        _fetchPage();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // Busca mensagens de forma paginada para garantir escalabilidade
+  Future<void> _fetchPage() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final newItems = await _service.fetchMessages(page: _page);
+      setState(() {
+        _page++;
+        _messages.addAll(newItems);
+        // Se a API retornar menos itens que o limite, não há mais dados
+        if (newItems.isEmpty || newItems.length < 20) {
+          _hasMore = false;
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar mensagens: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   String _getStatus(MessageModel message) {
     if (message.isSafe == true) return 'Segura';
     if (message.isPhishing == true) return 'Phishing';
-    if (message.hasSocialEngineering == true) {
-      return 'Engenharia social';
-    }
+    if (message.hasSocialEngineering == true) return 'Engenharia social';
     return 'Sem classificação';
   }
 
@@ -50,6 +96,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           SafeArea(
             child: Column(
               children: [
+                // Header customizado
                 SizedBox(
                   width: double.infinity,
                   height: 70,
@@ -66,24 +113,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         top: 0,
                         bottom: 0,
                         child: IconButton(
-                          onPressed: () {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/',
-                              (route) => false,
-                            );
-                          },
+                          onPressed: () => Navigator.pop(context),
                           icon: Image.asset(
                             'assets/Return_Button.png',
                             width: 24,
                             height: 24,
-                            errorBuilder: (_, __, ___) {
-                              return const Icon(
-                                Icons.arrow_back_ios,
-                                color: Colors.white,
-                                size: 20,
-                              );
-                            },
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -103,145 +142,44 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Stack(
+                    child: Column(
                       children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Mensagens capturadas',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: FutureBuilder<List<MessageModel>>(
-                                future: _futureMessages,
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  if (snapshot.hasError) {
-                                    return Center(
-                                      child: Text('Erro: ${snapshot.error}'),
-                                    );
-                                  }
-
-                                  final messages = snapshot.data ?? [];
-
-                                  if (messages.isEmpty) {
-                                    return const Center(
-                                      child: Text('Nenhuma mensagem encontrada'),
-                                    );
-                                  }
-
-                                  return ListView.separated(
-                                    padding: const EdgeInsets.only(
-                                      top: 4,
-                                      bottom: 70,
-                                    ),
-                                    itemCount: messages.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 14),
-                                    itemBuilder: (_, index) {
-                                      final msg = messages[index];
-
-                                      return Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          borderRadius: BorderRadius.circular(6),
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    MessageDetailsScreen(
-                                                  message: msg,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(14),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFD9D9D9),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: Colors.black12,
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  msg.content,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 10),
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 5,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: _getStatusColor(msg)
-                                                        .withValues(alpha: 0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(20),
-                                                    border: Border.all(
-                                                      color: _getStatusColor(msg),
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    _getStatus(msg),
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          _getStatusColor(msg),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Mensagens capturadas',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
                         ),
-                        Positioned(
-                          right: 6,
-                          bottom: 8,
-                          child: Image.asset(
-                            'assets/icon.png',
-                            width: 46,
-                            height: 46,
-                            errorBuilder: (_, __, ___) {
-                              return const SizedBox.shrink();
-                            },
-                          ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: _messages.isEmpty && _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : RefreshIndicator(
+                                  onRefresh: () async {
+                                    setState(() {
+                                      _messages.clear();
+                                      _page = 1;
+                                      _hasMore = true;
+                                    });
+                                    await _fetchPage();
+                                  },
+                                  child: ListView.separated(
+                                    controller: _scrollController,
+                                    padding: const EdgeInsets.only(top: 4, bottom: 70),
+                                    itemCount: _messages.length + (_hasMore ? 1 : 0),
+                                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                                    itemBuilder: (_, index) {
+                                      if (index == _messages.length) {
+                                        return const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 16),
+                                          child: Center(child: CircularProgressIndicator()),
+                                        );
+                                      }
+
+                                      final msg = _messages[index];
+                                      return _buildMessageItem(msg);
+                                    },
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -251,6 +189,80 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageItem(MessageModel msg) {
+    final isUnsafe = msg.isSafe == false;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MessageDetailsScreen(message: msg),
+            ),
+          );
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD9D9D9),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                msg.content,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 10),
+              // Alerta Educativo (Estratégia de Diferenciação)
+              if (isUnsafe && msg.classificationReason != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    "Risco: ${msg.classificationReason}",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.red.shade900,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(msg).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _getStatusColor(msg)),
+                ),
+                child: Text(
+                  _getStatus(msg),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(msg),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

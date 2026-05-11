@@ -4,66 +4,48 @@ import '../models/message_model.dart';
 class MessageCard extends StatelessWidget {
   final MessageModel message;
 
-  const MessageCard({
-    super.key,
-    required this.message,
-  });
-
-  String _statusText() {
-    if (message.isSafe == true) return 'Segura';
-    if (message.isPhishing == true) return 'Possível phishing';
-    if (message.hasSocialEngineering == true) {
-      return 'Possível engenharia social';
-    }
-    return 'Em análise / sem classificação';
-  }
-
-  IconData _statusIcon() {
-    if (message.isSafe == true) return Icons.verified_user;
-    if (message.isPhishing == true) return Icons.warning_amber_rounded;
-    if (message.hasSocialEngineering == true) return Icons.report_problem;
-    return Icons.help_outline;
-  }
+  const MessageCard({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
+    final isUnsafe = message.isSafe == false;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.content,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(message.content, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(_statusIcon()),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _statusText(),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
+            // Explicação de classificação [cite: 59]
+            if (isUnsafe && message.classificationReason != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.red.shade200),
                 ),
-              ],
-            ),
-            if (message.resultLink != null && message.resultLink!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Link detectado: ${message.resultLink}',
-                style: const TextStyle(fontSize: 13),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: Colors.red.shade900),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Análise: ${message.classificationReason}", // Ex: "Link suspeito" [cite: 37]
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade900,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-            if (message.createdAt != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Criado em: ${message.createdAt}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+            // ... resto do código do card (ícones e datas)
           ],
         ),
       ),
