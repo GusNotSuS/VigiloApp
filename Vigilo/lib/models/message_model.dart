@@ -8,6 +8,7 @@ class MessageModel {
   final String? classificationReason; // Novo campo de justificativa
   final String? createdAt;
   final String? updatedAt;
+  final double? riskScore;
 
   MessageModel({
     required this.id,
@@ -19,6 +20,7 @@ class MessageModel {
     this.classificationReason,
     this.createdAt,
     this.updatedAt,
+    this.riskScore,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class MessageModel {
       isPhishing: json['is_phishing'],
       isSafe: json['is_safe'],
       // Mapeia o motivo vindo da nova API
+      riskScore: json['risk_score']?.toDouble(),
       classificationReason: json['reason'] ?? json['classification_reason'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
