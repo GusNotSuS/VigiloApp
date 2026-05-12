@@ -5,7 +5,7 @@ class MessageModel {
   final bool? hasSocialEngineering;
   final bool? isPhishing;
   final bool? isSafe;
-  final String? classificationReason; // Novo campo de justificativa
+  final String? classificationReason;
   final String? createdAt;
   final String? updatedAt;
   final double? riskScore;
