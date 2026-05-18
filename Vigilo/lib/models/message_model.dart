@@ -5,7 +5,7 @@ class MessageModel {
   final bool? hasSocialEngineering;
   final bool? isPhishing;
   final bool? isSafe;
-  final String? classificationReason; // Novo campo de justificativa
+  final String? classificationReason;
   final String? createdAt;
   final String? updatedAt;
   final double? riskScore;
@@ -28,12 +28,11 @@ class MessageModel {
       id: json['id']?.toString() ?? '',
       content: json['content'] ?? '',
       resultLink: json['result_link'],
-      hasSocialEngineering: json['has_social_engineering'],
-      isPhishing: json['is_phishing'],
-      isSafe: json['is_safe'],
-      // Mapeia o motivo vindo da nova API
-      riskScore: json['risk_score']?.toDouble(),
+      hasSocialEngineering: json['has_social_engineering'] ?? false,
+      isPhishing: json['is_phishing'] ?? false,
+      isSafe: json['is_safe'] ?? true,
       classificationReason: json['reason'] ?? json['classification_reason'],
+      riskScore: json['risk_score']?.toDouble() ?? 0.0,
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );

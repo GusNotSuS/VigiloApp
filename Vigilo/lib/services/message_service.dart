@@ -4,7 +4,7 @@ import '../models/message_model.dart';
 
 class MessageService {
   // Endereço da API REST real [cite: 22, 49]
-  static const String baseUrl = 'http://10.91.23.232:8080/api/v1/messages/';
+  static const String baseUrl = 'http://10.10.2.130:8080/api/v1/messages/';
 
   // Implementação de paginação para evitar gargalos [cite: 24, 63]
   Future<List<MessageModel>> fetchMessages({int page = 1, int limit = 20}) async {
@@ -15,7 +15,6 @@ class MessageService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
-      // A API agora retorna uma lista paginada dentro de 'items'
       return (data['items'] as List)
           .map((e) => MessageModel.fromJson(e))
           .toList();

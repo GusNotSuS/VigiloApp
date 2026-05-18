@@ -104,9 +104,7 @@ class HomeScreen extends StatelessWidget {
                       }
 
                       final suspiciousMessages = messages.where((msg) {
-                        return msg.isSafe == false ||
-                            msg.isPhishing == true ||
-                            msg.hasSocialEngineering == true;
+                        return msg.isSafe == false;
                       }).toList();
 
                       if (suspiciousMessages.isEmpty) {

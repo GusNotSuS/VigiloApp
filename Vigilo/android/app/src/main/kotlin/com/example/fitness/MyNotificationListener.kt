@@ -20,7 +20,7 @@ class MyNotificationListener : NotificationListenerService() {
     private val channelId = "VigiloServiceChannel"
     private val client = OkHttpClient()
     private val processedNotifications = mutableSetOf<String>()
-    private val backendUrl = "http://10.91.23.232:8080/api/v1/messages/"
+    private val backendUrl = "http://10.10.2.130:8080/api/v1/messages/"
 
     override fun onCreate() {
         super.onCreate()
@@ -83,7 +83,9 @@ class MyNotificationListener : NotificationListenerService() {
                     NotificationEventBridge.sendMessage(hashMapOf(
                         "id" to json.optString("id"),
                         "content" to content,
+                        "is_safe" to json.optBoolean("is_safe"),
                         "is_phishing" to json.optBoolean("is_phishing"),
+                        "has_social_engineering" to json.optBoolean("has_social_engineering"),
                         "risk_score" to riskScore,
                         "reason" to json.optString("reason")
                     ))

@@ -14,7 +14,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
   final MessageService _service = MessageService();
   final ScrollController _scrollController = ScrollController();
 
-  // Estado para controle de paginação e performance (Cenário B)
   List<MessageModel> _messages = [];
   int _page = 1;
   bool _isLoading = false;
@@ -25,7 +24,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
     super.initState();
     _fetchPage();
     
-    // Listener para implementar Lazy Loading (MVP 2 - Otimização)
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
         _fetchPage();
@@ -39,7 +37,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
     super.dispose();
   }
 
-  // Busca mensagens de forma paginada para garantir escalabilidade
   Future<void> _fetchPage() async {
     if (_isLoading || !_hasMore) return;
 
@@ -50,7 +47,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
       setState(() {
         _page++;
         _messages.addAll(newItems);
-        // Se a API retornar menos itens que o limite, não há mais dados
         if (newItems.isEmpty || newItems.length < 20) {
           _hasMore = false;
         }
@@ -96,7 +92,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header customizado
                 SizedBox(
                   width: double.infinity,
                   height: 70,
@@ -226,7 +221,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 style: const TextStyle(fontSize: 14, color: Colors.black87),
               ),
               const SizedBox(height: 10),
-              // Alerta Educativo (Estratégia de Diferenciação)
               if (isUnsafe && msg.classificationReason != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 10),
