@@ -5,6 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -19,8 +21,15 @@ import java.io.IOException
 class MyNotificationListener : NotificationListenerService() {
     private val channelId = "VigiloServiceChannel"
     private val client = OkHttpClient()
-    private val processedNotifications = mutableSetOf<String>()
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val backendUrl = "http://10.10.2.130:8080/api/v1/messages/"
+
+    // PONTO 3 CORRIGIDO: Cache LRU estável que remove apenas o mais antigo ao passar de 100 itens
+    private val processedNotifications = object : LinkedHashMap<String, Boolean>(101, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean {
+            return size > 100
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -54,9 +63,10 @@ class MyNotificationListener : NotificationListenerService() {
         if (!(title.startsWith("+") || title.any { it.isDigit() })) return
 
         val msgKey = "$title|$text"
-        if (processedNotifications.contains(msgKey)) return
-        processedNotifications.add(msgKey)
-        if (processedNotifications.size > 100) processedNotifications.clear()
+        
+        // Verifica se já foi processada recentemente sem perigo de sofrer wipe total
+        if (processedNotifications.containsKey(msgKey)) return
+        processedNotifications[msgKey] = true
 
         sendToBackend(if (title.isNotBlank()) "$title: $text" else text)
     }
@@ -76,19 +86,22 @@ class MyNotificationListener : NotificationListenerService() {
                     val prefs = getSharedPreferences("VigilioPrefs", Context.MODE_PRIVATE)
                     val threshold = prefs.getFloat("min_risk_score", 0.8f)
 
-                    if (riskScore >= threshold) {
-                        showPhishingAlert(content, json.optString("reason", "Risco detectado"))
-                    }
+                    // PONTO 1 CORRIGIDO: Todo o retorno que toca na UI ou serviços do Android executado na Main Thread
+                    mainHandler.post {
+                        if (riskScore >= threshold) {
+                            showPhishingAlert(content, json.optString("reason", "Risco detectado"))
+                        }
 
-                    NotificationEventBridge.sendMessage(hashMapOf(
-                        "id" to json.optString("id"),
-                        "content" to content,
-                        "is_safe" to json.optBoolean("is_safe"),
-                        "is_phishing" to json.optBoolean("is_phishing"),
-                        "has_social_engineering" to json.optBoolean("has_social_engineering"),
-                        "risk_score" to riskScore,
-                        "reason" to json.optString("reason")
-                    ))
+                        NotificationEventBridge.sendMessage(hashMapOf(
+                            "id" to json.optString("id"),
+                            "content" to content,
+                            "is_safe" to json.optBoolean("is_safe"),
+                            "is_phishing" to json.optBoolean("is_phishing"),
+                            "has_social_engineering" to json.optBoolean("has_social_engineering"),
+                            "risk_score" to riskScore,
+                            "reason" to json.optString("reason")
+                        ))
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("VIGILO", e.message ?: "Error")

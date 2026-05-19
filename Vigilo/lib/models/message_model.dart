@@ -32,7 +32,8 @@ class MessageModel {
       isPhishing: json['is_phishing'] ?? false,
       isSafe: json['is_safe'] ?? true,
       classificationReason: json['reason'] ?? json['classification_reason'],
-      riskScore: json['risk_score']?.toDouble() ?? 0.0,
+      riskScore: json['risk_score'] != null 
+    ? double.parse(json['risk_score'].toString()) : 0.0,
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );
