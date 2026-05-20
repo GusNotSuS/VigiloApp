@@ -14,6 +14,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        // No configureFlutterEngine do seu MainActivity.kt
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             PERMISSION_CHANNEL
@@ -22,22 +23,20 @@ class MainActivity : FlutterActivity() {
                 "checkPermission" -> {
                     result.success(isNotificationServiceEnabled())
                 }
-
                 "openSettings" -> {
-                    try {
-                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(intent)
+                    // ... seu código de abrir configurações ...
+                }
+                "updateIp" -> {
+                    val ip = call.argument<String>("ip")
+                    if (ip != null) {
+                        // Salva o IP de forma persistente no Android
+                        val sharedPref = getSharedPreferences("VigiloPrefs", android.content.Context.MODE_PRIVATE)
+                        sharedPref.edit().putString("server_ip", ip).apply()
                         result.success(true)
-                    } catch (e: Exception) {
-                        result.error(
-                            "OPEN_SETTINGS_ERROR",
-                            "Não foi possível abrir as configurações.",
-                            e.message
-                        )
+                    } else {
+                        result.error("BAD_ARGUMENT", "IP veio nulo", null)
                     }
                 }
-
                 else -> result.notImplemented()
             }
         }
