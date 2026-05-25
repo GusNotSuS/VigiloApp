@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../services/Message_Service.dart';
+import '../main.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -8,13 +9,15 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = MessageService();
+    final isDark = VigilioApp.of(context)?.darkModeEnabled ?? false;
 
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/Background.png',
+              isDark ? 'assets/backgroundb.png' : 'assets/Background.png',
+              key: ValueKey<bool>(isDark),
               fit: BoxFit.cover,
             ),
           ),
@@ -51,20 +54,18 @@ class HomeScreen extends StatelessWidget {
                             'assets/icon.png',
                             width: 58,
                             height: 58,
-                            errorBuilder: (_, __, ___) {
-                              return const SizedBox.shrink();
-                            },
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'Resumo de monitoramento',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.black87,
+                      color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -73,20 +74,20 @@ class HomeScreen extends StatelessWidget {
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return _statusBox(
+                          isDark: isDark,
                           title: 'Carregando monitoramento',
-                          description:
-                              'Aguarde enquanto verificamos as mensagens capturadas.',
-                          titleColor: Colors.black87,
+                          description: 'Aguarde enquanto verificamos as mensagens capturadas.',
+                          titleColor: isDark ? Colors.white : Colors.black87,
                           icon: Icons.hourglass_top_rounded,
                         );
                       }
 
                       if (snapshot.hasError) {
                         return _statusBox(
+                          isDark: isDark,
                           title: 'Falha ao consultar mensagens',
-                          description:
-                              'Não foi possível carregar o resumo no momento.',
-                          titleColor: Colors.red.shade700,
+                          description: 'Não foi possível carregar o resumo no momento.',
+                          titleColor: isDark ? Colors.red.shade300 : Colors.red.shade700,
                           icon: Icons.error_outline_rounded,
                         );
                       }
@@ -95,10 +96,10 @@ class HomeScreen extends StatelessWidget {
 
                       if (messages.isEmpty) {
                         return _statusBox(
+                          isDark: isDark,
                           title: 'Nenhuma mensagem capturada',
-                          description:
-                              'O Vigilio ainda não identificou mensagens para análise.',
-                          titleColor: Colors.black87,
+                          description: 'O Vigilio ainda não identificou mensagens para análise.',
+                          titleColor: isDark ? Colors.white : Colors.black87,
                           icon: Icons.inbox_outlined,
                         );
                       }
@@ -111,30 +112,29 @@ class HomeScreen extends StatelessWidget {
 
                       if (suspiciousMessages.isEmpty) {
                         return _statusBox(
+                          isDark: isDark,
                           title: 'Mensagens monitoradas sem risco',
-                          description:
-                              'Foram identificadas mensagens, mas nenhuma apresentou sinais de phishing ou engenharia social.',
-                          titleColor: Colors.green.shade700,
+                          description: 'Foram identificadas mensagens, mas nenhuma apresentou sinais de phishing ou engenharia social.',
+                          titleColor: isDark ? Colors.green.shade300 : Colors.green.shade700,
                           icon: Icons.verified_user_outlined,
                         );
                       }
 
                       if (suspiciousMessages.length == 1) {
                         return _statusBox(
+                          isDark: isDark,
                           title: '1 mensagem suspeita encontrada',
-                          description:
-                              'Foi identificado um conteúdo com indícios de risco. Consulte a caixa de entrada para análise detalhada.',
-                          titleColor: Colors.red.shade700,
+                          description: 'Foi identificado um conteúdo com indícios de risco. Consulte a caixa de entrada para análise detalhada.',
+                          titleColor: isDark ? Colors.red.shade300 : Colors.red.shade700,
                           icon: Icons.warning_amber_rounded,
                         );
                       }
 
                       return _statusBox(
-                        title:
-                            '${suspiciousMessages.length} mensagens suspeitas encontradas',
-                        description:
-                            'Foram detectadas mensagens com possíveis indícios de phishing ou engenharia social. Revise a caixa de entrada para mais detalhes.',
-                        titleColor: Colors.red.shade700,
+                        isDark: isDark,
+                        title: '${suspiciousMessages.length} mensagens suspeitas encontradas',
+                        description: 'Foram detectadas mensagens com possíveis indícios de phishing ou engenharia social. Revise a caixa de entrada para mais detalhes.',
+                        titleColor: isDark ? Colors.red.shade300 : Colors.red.shade700,
                         icon: Icons.warning_amber_rounded,
                       );
                     },
@@ -145,18 +145,14 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: _ActionButton(
                           label: 'Mensagens',
-                          onTap: () {
-                            Navigator.pushNamed(context, '/messages');
-                          },
+                          onTap: () => Navigator.pushNamed(context, '/messages'),
                         ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: _ActionButton(
                           label: 'Configurações',
-                          onTap: () {
-                            Navigator.pushNamed(context, '/settings');
-                          },
+                          onTap: () => Navigator.pushNamed(context, '/settings'),
                         ),
                       ),
                     ],
@@ -166,9 +162,7 @@ class HomeScreen extends StatelessWidget {
                     'assets/Fala_Home.png',
                     width: 170,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) {
-                      return const SizedBox.shrink();
-                    },
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -181,6 +175,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _statusBox({
+    required bool isDark,
     required String title,
     required String description,
     required Color titleColor,
@@ -191,7 +186,7 @@ class HomeScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFD9D9D9),
+        color: isDark ? const Color(0xFF2E97F2) : const Color(0xFFD9D9D9),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.black12),
       ),
@@ -201,11 +196,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: titleColor,
-                size: 22,
-              ),
+              Icon(icon, color: titleColor, size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -222,9 +213,9 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.black87,
+              color: isDark ? Colors.white : Colors.black87,
               height: 1.4,
             ),
           ),
@@ -238,10 +229,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ActionButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _ActionButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -259,10 +247,7 @@ class _ActionButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
       ),
     );

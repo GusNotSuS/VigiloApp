@@ -1,5 +1,6 @@
 package com.example.fitness
 
+import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
@@ -14,7 +15,6 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // No configureFlutterEngine do seu MainActivity.kt
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             PERMISSION_CHANNEL
@@ -23,20 +23,44 @@ class MainActivity : FlutterActivity() {
                 "checkPermission" -> {
                     result.success(isNotificationServiceEnabled())
                 }
+
                 "openSettings" -> {
-                    // ... seu código de abrir configurações ...
+                    try {
+                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error(
+                            "OPEN_SETTINGS_ERROR",
+                            "Não foi possível abrir as configurações.",
+                            e.message
+                        )
+                    }
                 }
+
                 "updateIp" -> {
                     val ip = call.argument<String>("ip")
                     if (ip != null) {
-                        // Salva o IP de forma persistente no Android
-                        val sharedPref = getSharedPreferences("VigiloPrefs", android.content.Context.MODE_PRIVATE)
+                        val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
                         sharedPref.edit().putString("server_ip", ip).apply()
                         result.success(true)
                     } else {
                         result.error("BAD_ARGUMENT", "IP veio nulo", null)
                     }
                 }
+
+                "updateNotificationSettings" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: true
+                    val percentage = call.argument<Int>("percentage") ?: 80
+                    val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
+                    sharedPref.edit()
+                        .putBoolean("notifications_enabled", enabled)
+                        .putInt("phishing_percentage", percentage)
+                        .apply()
+                    result.success(true)
+                }
+
                 else -> result.notImplemented()
             }
         }

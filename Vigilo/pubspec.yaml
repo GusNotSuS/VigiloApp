@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
@@ -31,5 +32,6 @@ flutter:
     - assets/Fala_Home.png
     - assets/Fala_Config.png
     - assets/Background.png
+    - assets/backgroundb.png
     - assets/Return_Button.png
     - assets/Banner_Home.png

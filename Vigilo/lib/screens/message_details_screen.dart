@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
+import '../main.dart';
 
 class MessageDetailsScreen extends StatelessWidget {
   final MessageModel message;
@@ -28,13 +29,15 @@ class MessageDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _getStatus(message);
+    final isDark = VigilioApp.of(context)?.darkModeEnabled ?? false;
 
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/Background.png',
+              isDark ? 'assets/backgroundb.png' : 'assets/Background.png',
+              key: ValueKey<bool>(isDark),
               fit: BoxFit.cover,
             ),
           ),
@@ -96,7 +99,7 @@ class MessageDetailsScreen extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD9D9D9),
+                            color: isDark ? const Color(0xFF2E97F2) : const Color(0xFFD9D9D9),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.black12),
                           ),
@@ -125,58 +128,61 @@ class MessageDetailsScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const Text(
+                              Text(
                                 'Conteúdo da mensagem',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.black,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 message.content,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.black87,
+                                  color: isDark ? Colors.white : Colors.black87,
                                   height: 1.4,
                                 ),
                               ),
                               const SizedBox(height: 16),
                               if (message.createdAt != null &&
                                   message.createdAt!.isNotEmpty) ...[
-                                const Text(
+                                Text(
                                   'Recebida em',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   message.createdAt!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.black87,
+                                    color: isDark ? Colors.white70 : Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                               ],
-                              const Text(
+                              Text(
                                 'Análise',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.black,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Phishing: ${message.isPhishing == null ? "Não analisado" : message.isPhishing! ? "Sim" : "Não"}',
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Engenharia social: ${message.hasSocialEngineering == null ? "Não analisado" : message.hasSocialEngineering! ? "Sim" : "Não"}',
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black),
                               ),
                             ],
                           ),

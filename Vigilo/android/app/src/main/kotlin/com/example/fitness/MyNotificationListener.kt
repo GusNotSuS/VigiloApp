@@ -22,11 +22,9 @@ class MyNotificationListener : NotificationListenerService() {
     private val client = OkHttpClient()
     private val processedNotifications = mutableSetOf<String>()
 
-    // Recupera dinamicamente o IP salvo pelo Flutter no SharedPreferences
     private val backendUrl: String
         get() {
             val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
-            // Caso não encontre nenhum IP salvo ainda, usa o último válido como fallback
             val ip = sharedPref.getString("server_ip", "10.115.245.25")
             return "http://$ip:8080/api/v1/messages/"
         }
@@ -79,7 +77,6 @@ class MyNotificationListener : NotificationListenerService() {
             return
         }
 
-        // FILTRO DE DUPLICIDADE
         val msgKey = "$title|$text"
         if (processedNotifications.contains(msgKey)) {
             Log.d("VIGILO_DEBUG", "Ignorado: Mensagem duplicada")
@@ -119,12 +116,21 @@ class MyNotificationListener : NotificationListenerService() {
                     }
 
                     val json = JSONObject(body)
-
-                    // VERIFICAÇÃO DE PHISHING
                     val isPhishing = json.optBoolean("is_phishing", false)
+
                     if (isPhishing) {
                         Log.w("VIGILO_DEBUG", "ALERTA: Phishing confirmado pelo backend!")
-                        showPhishingAlert(content)
+                        
+                        val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
+                        val userEnabled = sharedPref.getBoolean("notifications_enabled", true)
+                        val userMinPercentage = sharedPref.getInt("phishing_percentage", 80)
+                        val apiRiskScore = json.optDouble("risk_score", 0.0) * 100
+
+                        if (userEnabled && apiRiskScore >= userMinPercentage) {
+                            showPhishingAlert(content)
+                        } else {
+                            Log.d("VIGILO_DEBUG", "Alerta bloqueado pelas configurações do usuário (% ou Desativado)")
+                        }
                     }
 
                     val result = hashMapOf<String, Any?>(

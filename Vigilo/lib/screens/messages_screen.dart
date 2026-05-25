@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message_model.dart';
 import '../services/Message_Service.dart';
+import '../main.dart';
 import 'message_details_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -13,37 +15,57 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen> {
   final MessageService _service = MessageService();
   late Future<List<MessageModel>> _futureMessages;
+  int _riskLimit = 80;
 
   @override
   void initState() {
     super.initState();
-    _futureMessages = _service.fetchMessages();
+    _futureMessages = _loadAndFilterMessages();
+  }
+
+  Future<List<MessageModel>> _loadAndFilterMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _riskLimit = prefs.getInt('phishing_percentage') ?? 80;
+    });
+
+    final allMessages = await _service.fetchMessages();
+
+    return allMessages.where((msg) {
+      if (msg.isSafe == true) return false;
+      
+      final double score = msg.riskScore ?? 0.0;
+      final int calculatedScore = (score * 100).round();
+      
+      return calculatedScore >= _riskLimit;
+    }).toList();
   }
 
   String _getStatus(MessageModel message) {
     if (message.isSafe == true) return 'Segura';
     if (message.isPhishing == true) return 'Phishing';
-    if (message.hasSocialEngineering == true) {
-      return 'Engenharia social';
-    }
+    if (message.hasSocialEngineering == true) return 'Engenharia social';
     return 'Sem classificação';
   }
 
-  Color _getStatusColor(MessageModel message) {
-    if (message.isSafe == true) return Colors.green.shade700;
-    if (message.isPhishing == true) return Colors.red.shade700;
-    if (message.hasSocialEngineering == true) return Colors.orange.shade700;
-    return Colors.grey.shade700;
+  Color _getStatusColor(MessageModel message, bool isDark) {
+    if (message.isSafe == true) return isDark ? Colors.green.shade300 : Colors.green.shade700;
+    if (message.isPhishing == true) return isDark ? Colors.red.shade300 : Colors.red.shade700;
+    if (message.hasSocialEngineering == true) return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+    return isDark ? Colors.white60 : Colors.grey.shade700;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = VigilioApp.of(context)?.darkModeEnabled ?? false;
+
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/Background.png',
+              isDark ? 'assets/backgroundb.png' : 'assets/Background.png',
+              key: ValueKey<bool>(isDark),
               fit: BoxFit.cover,
             ),
           ),
@@ -56,10 +78,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Image.asset(
-                          'assets/banner.png',
-                          fit: BoxFit.fill,
-                        ),
+                        child: Image.asset('assets/banner.png', fit: BoxFit.fill),
                       ),
                       Positioned(
                         left: 8,
@@ -67,34 +86,20 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         bottom: 0,
                         child: IconButton(
                           onPressed: () {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/',
-                              (route) => false,
-                            );
+                            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                           },
                           icon: Image.asset(
                             'assets/Return_Button.png',
                             width: 24,
                             height: 24,
-                            errorBuilder: (_, __, ___) {
-                              return const Icon(
-                                Icons.arrow_back_ios,
-                                color: Colors.white,
-                                size: 20,
-                              );
-                            },
+                            errorBuilder: (_, __, ___) => const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
                       const Center(
                         child: Text(
                           'Caixa de Entrada',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -108,49 +113,36 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         Column(
                           children: [
                             const SizedBox(height: 8),
-                            const Text(
-                              'Mensagens capturadas',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
-                              ),
+                            Text(
+                              'Exibindo riscos acima de $_riskLimit%',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87, fontWeight: FontWeight.w500),
                             ),
                             const SizedBox(height: 8),
                             Expanded(
                               child: FutureBuilder<List<MessageModel>>(
                                 future: _futureMessages,
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Center(child: CircularProgressIndicator());
                                   }
 
                                   if (snapshot.hasError) {
-                                    return Center(
-                                      child: Text('Erro: ${snapshot.error}'),
-                                    );
+                                    return Center(child: Text('Erro: ${snapshot.error}', style: TextStyle(color: isDark ? Colors.white : Colors.black)));
                                   }
 
                                   final messages = snapshot.data ?? [];
 
                                   if (messages.isEmpty) {
-                                    return const Center(
-                                      child: Text('Nenhuma mensagem encontrada'),
-                                    );
+                                    return Center(child: Text('Nenhuma mensagem suspeita acima de $_riskLimit%', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13)));
                                   }
 
                                   return ListView.separated(
-                                    padding: const EdgeInsets.only(
-                                      top: 4,
-                                      bottom: 70,
-                                    ),
+                                    padding: const EdgeInsets.only(top: 4, bottom: 70),
                                     itemCount: messages.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 14),
+                                    separatorBuilder: (_, __) => const SizedBox(height: 14),
                                     itemBuilder: (_, index) {
                                       final msg = messages[index];
+                                      final statusColor = _getStatusColor(msg, isDark);
 
                                       return Material(
                                         color: Colors.transparent,
@@ -160,10 +152,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (_) =>
-                                                    MessageDetailsScreen(
-                                                  message: msg,
-                                                ),
+                                                builder: (_) => MessageDetailsScreen(message: msg),
                                               ),
                                             );
                                           },
@@ -171,52 +160,30 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                             width: double.infinity,
                                             padding: const EdgeInsets.all(14),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFD9D9D9),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: Colors.black12,
-                                              ),
+                                              color: isDark ? const Color(0xFF2E97F2) : const Color(0xFFD9D9D9),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: Colors.black12),
                                             ),
                                             child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   msg.content,
                                                   maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.black87,
-                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87),
                                                 ),
                                                 const SizedBox(height: 10),
                                                 Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 5,
-                                                  ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                                   decoration: BoxDecoration(
-                                                    color: _getStatusColor(msg)
-                                                        .withValues(alpha: 0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(20),
-                                                    border: Border.all(
-                                                      color: _getStatusColor(msg),
-                                                    ),
+                                                    color: statusColor.withValues(alpha: 0.15),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(color: statusColor),
                                                   ),
                                                   child: Text(
-                                                    _getStatus(msg),
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          _getStatusColor(msg),
-                                                    ),
+                                                    '${_getStatus(msg)} (${((msg.riskScore ?? 0.0) * 100).round()}%)',
+                                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
                                                   ),
                                                 ),
                                               ],
@@ -238,9 +205,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             'assets/icon.png',
                             width: 46,
                             height: 46,
-                            errorBuilder: (_, __, ___) {
-                              return const SizedBox.shrink();
-                            },
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                           ),
                         ),
                       ],
