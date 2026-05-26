@@ -10,7 +10,7 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final bool isDark = prefs.getBool('dark_mode') ?? false;
-  final String serverIp = prefs.getString('server_ip') ?? '10.115.245.25';
+  final String serverIp = prefs.getString('server_ip') ?? '10.127.245.118';
 
   const channel = MethodChannel('com.example.fitness/notifications');
   try {

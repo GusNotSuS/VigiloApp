@@ -6,6 +6,7 @@ class MessageModel {
   final bool? isPhishing;
   final bool? isSafe;
   final double? riskScore;
+  final String? analysisComment;
   final String? createdAt;
   final String? updatedAt;
 
@@ -17,6 +18,7 @@ class MessageModel {
     this.isPhishing,
     this.isSafe,
     this.riskScore,
+    this.analysisComment,
     this.createdAt,
     this.updatedAt,
   });
@@ -30,6 +32,7 @@ class MessageModel {
       isPhishing: json['is_phishing'],
       isSafe: json['is_safe'],
       riskScore: json['risk_score'] != null ? (json['risk_score'] as num).toDouble() : null,
+      analysisComment: json['analysis_comment'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );

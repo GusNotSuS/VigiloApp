@@ -112,7 +112,7 @@ class MessageDetailsScreen extends StatelessWidget {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(message).withValues(alpha: 0.15),
+                                  color: _getStatusColor(message).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: _getStatusColor(message),
@@ -184,6 +184,27 @@ class MessageDetailsScreen extends StatelessWidget {
                                 'Engenharia social: ${message.hasSocialEngineering == null ? "Não analisado" : message.hasSocialEngineering! ? "Sim" : "Não"}',
                                 style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black),
                               ),
+                              if (message.analysisComment != null &&
+                                  message.analysisComment!.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Por que é perigosa?',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  message.analysisComment!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
