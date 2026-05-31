@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import 'screens/home_screen.dart';
 import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
@@ -9,14 +10,22 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
+  
+  String? deviceId = prefs.getString('device_id');
+  if (deviceId == null) {
+    deviceId = const Uuid().v4();
+    await prefs.setString('device_id', deviceId);
+  }
+
   final bool isDark = prefs.getBool('dark_mode') ?? false;
-  final String serverIp = prefs.getString('server_ip') ?? '10.127.245.118';
+  final String serverIp = prefs.getString('server_ip') ?? '10.115.245.25';
 
   const channel = MethodChannel('com.example.fitness/notifications');
   try {
     await channel.invokeMethod('updateIp', {'ip': serverIp});
+    await channel.invokeMethod('updateDeviceId', {'deviceId': deviceId});
   } catch (e) {
-    debugPrint("Erro ao passar IP para o nativo: $e");
+    debugPrint("Erro ao sincronizar dados com o nativo: $e");
   }
 
   runApp(VigilioApp(initialDarkMode: isDark));

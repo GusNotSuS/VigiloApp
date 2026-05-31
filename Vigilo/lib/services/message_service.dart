@@ -1,38 +1,34 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message_model.dart';
-import '../services/app_config.dart';
 
 class MessageService {
-  // CELULAR FÍSICO (troca pelo IP do seu PC):
-  static const String baseUrl = AppConfig.baseUrl;
-
   Future<List<MessageModel>> fetchMessages() async {
-    final response = await http.get(Uri.parse(baseUrl));
+    final prefs = await SharedPreferences.getInstance();
+    final String serverIp = prefs.getString('server_ip') ?? '172.16.220.249';
+    final String deviceId = prefs.getString('device_id') ?? 'default_device';
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+    final url = Uri.parse('http://$serverIp:8080/api/v1/messages/');
 
-      return (data['items'] as List)
-          .map((e) => MessageModel.fromJson(e))
-          .toList();
-    } else {
-      throw Exception('Erro ao buscar mensagens');
-    }
-  }
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-ID': deviceId,
+        },
+      );
 
-  Future<MessageModel> createMessage(String content) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'content': content}),
-    );
-
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return MessageModel.fromJson(data);
-    } else {
-      throw Exception('Erro ao criar mensagem');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> items = data['items'] ?? [];
+        return items.map((json) => MessageModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Falha ao carregar mensagens');
+      }
+    } catch (e) {
+      throw Exception('Erro de conexão: $e');
     }
   }
 }
