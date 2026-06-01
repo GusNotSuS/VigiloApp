@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '/services/app_config.dart'; // IMPORTAÇÃO DO CONFIG CENTRALIZADO
 import 'screens/home_screen.dart';
 import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
@@ -11,6 +12,7 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   
+  // Recupera ou gera o ID único do dispositivo
   String? deviceId = prefs.getString('device_id');
   if (deviceId == null) {
     deviceId = const Uuid().v4();
@@ -18,12 +20,14 @@ void main() async {
   }
 
   final bool isDark = prefs.getBool('dark_mode') ?? false;
-  final String serverIp = prefs.getString('server_ip') ?? '10.115.245.25';
 
+  // Canal de comunicação com o Kotlin nativo
   const channel = MethodChannel('com.example.fitness/notifications');
   try {
-    await channel.invokeMethod('updateIp', {'ip': serverIp});
+    // CORREÇÃO: Envia o IP fixo do AppConfig direto para o Kotlin, ignorando lixos de memória
+    await channel.invokeMethod('updateIp', {'ip': AppConfig.serverIp});
     await channel.invokeMethod('updateDeviceId', {'deviceId': deviceId});
+    debugPrint("Dados sincronizados com o nativo com sucesso! IP: ${AppConfig.serverIp}");
   } catch (e) {
     debugPrint("Erro ao sincronizar dados com o nativo: $e");
   }

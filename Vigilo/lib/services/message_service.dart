@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message_model.dart';
+import 'app_config.dart';
 
 class MessageService {
   Future<List<MessageModel>> fetchMessages() async {
     final prefs = await SharedPreferences.getInstance();
-    final String serverIp = prefs.getString('server_ip') ?? '172.16.220.249';
+    
     final String deviceId = prefs.getString('device_id') ?? 'default_device';
-
-    final url = Uri.parse('http://$serverIp:8080/api/v1/messages/');
+    final url = Uri.parse(AppConfig.baseUrl); 
 
     try {
       final response = await http.get(
@@ -25,10 +25,10 @@ class MessageService {
         final List<dynamic> items = data['items'] ?? [];
         return items.map((json) => MessageModel.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao carregar mensagens');
+        throw Exception('Falha ao carregar mensagens. Status: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Erro de conexão: $e');
+      throw Exception('Erro de conexão com a API: $e');
     }
   }
 }

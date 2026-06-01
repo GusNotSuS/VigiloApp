@@ -25,8 +25,23 @@ class MyNotificationListener : NotificationListenerService() {
     private val backendUrl: String
         get() {
             val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
-            val ip = sharedPref.getString("server_ip", "10.115.245.25")
+            val ip = sharedPref.getString("server_ip", "172.16.220.141")
             return "http://$ip:8080/api/v1/messages/"
+        }
+
+    // LÊ O ID DIRETAMENTE DO PREFS GERADO PELO FLUTTER DE FORMA DINÂMICA
+    private val deviceId: String
+        get() {
+            val flutterSharedPref = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val idDoFlutter = flutterSharedPref.getString("flutter.device_id", null)
+            
+            if (!idDoFlutter.isNullOrBlank()) {
+                Log.d("VIGILO_DEBUG", "Kotlin leu o ID dinâmico do Flutter: $idDoFlutter")
+                return idDoFlutter
+            }
+            
+            val backupPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
+            return backupPref.getString("device_id", "default_device") ?: "default_device"
         }
 
     override fun onCreate() {
@@ -102,6 +117,8 @@ class MyNotificationListener : NotificationListenerService() {
         val request = Request.Builder()
             .url(backendUrl)
             .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .addHeader("X-Device-ID", deviceId) 
             .build()
 
         Thread {
@@ -129,7 +146,7 @@ class MyNotificationListener : NotificationListenerService() {
                         if (userEnabled && apiRiskScore >= userMinPercentage) {
                             showPhishingAlert(content)
                         } else {
-                            Log.d("VIGILO_DEBUG", "Alerta bloqueado pelas configurações do usuário (% ou Desativado)")
+                            Log.d("VIGILO_DEBUG", "Alerta bloqueado pelas configurações do usuário")
                         }
                     }
 
@@ -168,7 +185,6 @@ class MyNotificationListener : NotificationListenerService() {
             "created_at" to null,
             "updated_at" to null
         )
-
         NotificationEventBridge.sendMessage(fallback)
     }
 
