@@ -23,11 +23,7 @@ class MyNotificationListener : NotificationListenerService() {
     private val processedNotifications = mutableSetOf<String>()
 
     private val backendUrl: String
-        get() {
-            val sharedPref = getSharedPreferences("VigiloPrefs", Context.MODE_PRIVATE)
-            val ip = sharedPref.getString("server_ip", "172.16.220.141")
-            return "http://$ip:8080/api/v1/messages/"
-        }
+    get() = "https://vigilio-backend.onrender.com/api/v1/messages"
 
     // LÊ O ID DIRETAMENTE DO PREFS GERADO PELO FLUTTER DE FORMA DINÂMICA
     private val deviceId: String

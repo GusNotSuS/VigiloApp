@@ -1,7 +1,7 @@
-// lib/app_config.dart
 class AppConfig {
-  // Você só vai alterar o IP NESTA LINHA a partir de agora:
-  static const String serverIp = '172.16.220.141';
+  // Sua URL oficial do Render (sempre use https)
+  static const String baseUrl = 'https://vigilio-backend.onrender.com/api/v1/messages';
   
-  static const String baseUrl = 'http://$serverIp:8080/api/v1/messages/';
+  // Como agora usamos o link direto, você pode até remover a variável serverIp antiga
+  static const String serverIp = ''; 
 }
